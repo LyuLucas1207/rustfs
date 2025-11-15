@@ -1,6 +1,6 @@
 [![RustFS](https://rustfs.com/images/rustfs-github.png)](https://rustfs.com)
 
-<p align="center">RustFS is a high-performance distributed object storage software built using Rust</p>
+<p align="center">RustFS 是一个使用 Rust 构建的高性能分布式对象存储软件</p >
 
 <p align="center">
   <a href="https://github.com/rustfs/rustfs/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/rustfs/rustfs/actions/workflows/ci.yml/badge.svg" /></a>
@@ -8,209 +8,178 @@
   <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/rustfs/rustfs"/>
   <img alt="Github Last Commit" src="https://img.shields.io/github/last-commit/rustfs/rustfs"/>
   <a href="https://hellogithub.com/repository/rustfs/rustfs" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=b95bcb72bdc340b68f16fdf6790b7d5b&claim_uid=MsbvjYeLDKAH457&theme=small" alt="Featured｜HelloGitHub" /></a>
-</p>
+</p >
 
 <p align="center">
-  <a href="https://docs.rustfs.com/introduction.html">Getting Started</a>
-  · <a href="https://docs.rustfs.com/">Docs</a>
-  · <a href="https://github.com/rustfs/rustfs/issues">Bug reports</a>
-  · <a href="https://github.com/rustfs/rustfs/discussions">Discussions</a>
-</p>
+  <a href="https://docs.rustfs.com/zh/introduction.html">快速开始</a >
+  · <a href="https://docs.rustfs.com/zh/">文档</a >
+  · <a href="https://github.com/rustfs/rustfs/issues">问题报告</a >
+  · <a href="https://github.com/rustfs/rustfs/discussions">讨论</a >
+</p >
 
 <p align="center">
-English | <a href="https://github.com/rustfs/rustfs/blob/main/README_ZH.md">简体中文</a> |
-  <!-- Keep these links. Translations will automatically update with the README. -->
-  <a href="https://readme-i18n.com/rustfs/rustfs?lang=de">Deutsch</a> |
-  <a href="https://readme-i18n.com/rustfs/rustfs?lang=es">Español</a> |
-  <a href="https://readme-i18n.com/rustfs/rustfs?lang=fr">français</a> |
-  <a href="https://readme-i18n.com/rustfs/rustfs?lang=ja">日本語</a> |
-  <a href="https://readme-i18n.com/rustfs/rustfs?lang=ko">한국어</a> |
-  <a href="https://readme-i18n.com/rustfs/rustfs?lang=pt">Portuguese</a> |
-  <a href="https://readme-i18n.com/rustfs/rustfs?lang=ru">Русский</a>
-</p>
+<a href="https://github.com/rustfs/rustfs/blob/main/README.md">English</a > | 简体中文
+</p >
 
-RustFS is a high-performance distributed object storage software built using Rust, one of the most popular languages
-worldwide. Along with MinIO, it shares a range of advantages such as simplicity, S3 compatibility, open-source nature,
-support for data lakes, AI, and big data. Furthermore, it has a better and more user-friendly open-source license in
-comparison to other storage systems, being constructed under the Apache license. As Rust serves as its foundation,
-RustFS provides faster speed and safer distributed features for high-performance object storage.
+RustFS 是一个使用 Rust（全球最受欢迎的编程语言之一）构建的高性能分布式对象存储软件。与 MinIO 一样，它具有简单性、S3
+兼容性、开源特性以及对数据湖、AI 和大数据的支持等一系列优势。此外，与其他存储系统相比，它采用 Apache
+许可证构建，拥有更好、更用户友好的开源许可证。由于以 Rust 为基础，RustFS 为高性能对象存储提供了更快的速度和更安全的分布式功能。
 
-> ⚠️ **RustFS is under rapid development. Do NOT use in production environments!**
+## 特性
 
-## Features
-
-- **High Performance**: Built with Rust, ensuring speed and efficiency.
-- **Distributed Architecture**: Scalable and fault-tolerant design for large-scale deployments.
-- **S3 Compatibility**: Seamless integration with existing S3-compatible applications.
-- **Data Lake Support**: Optimized for big data and AI workloads.
-- **Open Source**: Licensed under Apache 2.0, encouraging community contributions and transparency.
-- **User-Friendly**: Designed with simplicity in mind, making it easy to deploy and manage.
+- **高性能**：使用 Rust 构建，确保速度和效率。
+- **分布式架构**：可扩展且容错的设计，适用于大规模部署。
+- **S3 兼容性**：与现有 S3 兼容应用程序无缝集成。
+- **数据湖支持**：针对大数据和 AI 工作负载进行了优化。
+- **开源**：采用 Apache 2.0 许可证，鼓励社区贡献和透明度。
+- **用户友好**：设计简单，易于部署和管理。
 
 ## RustFS vs MinIO
 
-Stress test server parameters
+压力测试服务器参数
 
-| Type    | parameter | Remark                                                   |
-|---------|-----------|----------------------------------------------------------|
-| CPU     | 2 Core    | Intel Xeon(Sapphire Rapids) Platinum 8475B , 2.7/3.2 GHz |   |
-| Memory  | 4GB       |                                                          |
-| Network | 15Gbp     |                                                          |
-| Driver  | 40GB x 4  | IOPS 3800 / Driver                                       |
+| 类型  | 参数       | 备注                                                       |
+|-----|----------|----------------------------------------------------------|
+| CPU | 2 核心     | Intel Xeon(Sapphire Rapids) Platinum 8475B , 2.7/3.2 GHz |   |
+| 内存  | 4GB      |                                                          |
+| 网络  | 15Gbp    |                                                          |
+| 驱动器 | 40GB x 4 | IOPS 3800 / 驱动器                                          |
 
 <https://github.com/user-attachments/assets/2e4979b5-260c-4f2c-ac12-c87fd558072a>
 
-### RustFS vs Other object storage
+### RustFS vs 其他对象存储
 
-| RustFS                                                                          | Other object storage                                                                                                    |
-|---------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
-| Powerful Console                                                                | Simple and useless Console                                                                                              |
-| Developed based on Rust language, memory is safer                               | Developed in Go or C, with potential issues like memory GC/leaks                                                        |
-| Does not report logs to third-party countries                                   | Reporting logs to other third countries may violate national security laws                                              |
-| Licensed under Apache, more business-friendly                                   | AGPL V3 License and other License, polluted open source and License traps, infringement of intellectual property rights |
-| Comprehensive S3 support, works with domestic and international cloud providers | Full support for S3, but no local cloud vendor support                                                                  |
-| Rust-based development, strong support for secure and innovative devices        | Poor support for edge gateways and secure innovative devices                                                            |
-| Stable commercial prices, free community support                                | High pricing, with costs up to $250,000 for 1PiB                                                                        |
-| No risk                                                                         | Intellectual property risks and risks of prohibited uses                                                                |
+| RustFS                   | 其他对象存储                              |
+|--------------------------|-------------------------------------|
+| 强大的控制台                   | 简单且无用的控制台                           |
+| 基于 Rust 语言开发，内存更安全       | 使用 Go 或 C 开发，存在内存 GC/泄漏等潜在问题        |
+| 不向第三方国家报告日志              | 向其他第三方国家报告日志可能违反国家安全法律              |
+| 采用 Apache 许可证，对商业更友好     | AGPL V3 许可证等其他许可证，污染开源和许可证陷阱，侵犯知识产权 |
+| 全面的 S3 支持，适用于国内外云提供商     | 完全支持 S3，但不支持本地云厂商                   |
+| 基于 Rust 开发，对安全和创新设备有强大支持 | 对边缘网关和安全创新设备支持较差                    |
+| 稳定的商业价格，免费社区支持           | 高昂的定价，1PiB 成本高达 $250,000            |
+| 无风险                      | 知识产权风险和禁止使用的风险                      |
 
-## Quickstart
+## 快速开始
 
-To get started with RustFS, follow these steps:
+要开始使用 RustFS，请按照以下步骤操作：
 
-1. **One-click installation script (Option 1)​​**
+1. **一键脚本快速启动 (方案一)**
 
-  ```bash
-  curl -O  https://rustfs.com/install_rustfs.sh && bash install_rustfs.sh
-  ```
-
-2. **Docker Quick Start (Option 2)​​**
-
-RustFS container run as non-root user `rustfs` with id `1000`, if you run docker with `-v` to mount host directory into docker container, please make sure the owner of host directory has been changed to `1000`, otherwise you will encounter permission denied error.
-
-  ```bash
-   # create data and logs directories
-   mkdir -p data logs
-
-   # change the owner of those two ditectories
-   chown -R 1000:1000 data logs
-
-   # using latest version
-   docker run -d -p 9000:9000 -p 9001:9001 -v $(pwd)/data:/data -v $(pwd)/logs:/logs rustfs/rustfs:latest
-
-   # using specific version
-   docker run -d -p 9000:9000 -p 9001:9001 -v $(pwd)/data:/data -v $(pwd)/logs:/logs rustfs/rustfs:1.0.0.alpha.68
+   ```bash
+   curl -O  https://rustfs.com/install_rustfs.sh && bash install_rustfs.sh
    ```
 
-For docker installation, you can also run the container with docker compose. With the `docker-compose.yml` file under
-root directory, running the command:
+2. **Docker 快速启动（方案二）**
+
+  ```bash
+   docker run -d -p 9000:9000  -v /data:/data rustfs/rustfs
+   ```
+
+对于使用 Docker 安装来讲，你还可以使用 `docker compose` 来启动 rustfs 实例。在仓库的根目录下面有一个 `docker-compose.yml`
+文件。运行如下命令即可：
 
   ```
   docker compose --profile observability up -d
   ```
 
-**NOTE**: You should be better to have a look for `docker-compose.yaml` file. Because, several services contains in the
-file. Grafan,prometheus,jaeger containers will be launched using docker compose file, which is helpful for rustfs
-observability. If you want to start redis as well as nginx container, you can specify the corresponding profiles.
+**注意**：在使用 `docker compose` 之前，你应该仔细阅读一下 `docker-compose.yaml`，因为该文件中包含多个服务，除了 rustfs
+以外，还有 grafana、prometheus、jaeger 等，这些是为 rustfs 可观测性服务的，还有 redis 和 nginx。你想启动哪些容器，就需要用
+`--profile` 参数指定相应的 profile。
 
-3. **Build from Source (Option 3) - Advanced Users**
+3. **从源码构建（方案三）- 高级用户**
 
-   For developers who want to build RustFS Docker images from source with multi-architecture support:
+   面向希望从源码构建支持多架构 Docker 镜像的开发者：
 
    ```bash
-   # Build multi-architecture images locally
+   # 本地构建多架构镜像
    ./docker-buildx.sh --build-arg RELEASE=latest
 
-   # Build and push to registry
+   # 构建并推送至镜像仓库
    ./docker-buildx.sh --push
 
-   # Build specific version
+   # 构建指定版本
    ./docker-buildx.sh --release v1.0.0 --push
 
-   # Build for custom registry
+   # 构建并推送到自定义镜像仓库
    ./docker-buildx.sh --registry your-registry.com --namespace yourname --push
    ```
 
-   The `docker-buildx.sh` script supports:
-    - **Multi-architecture builds**: `linux/amd64`, `linux/arm64`
-    - **Automatic version detection**: Uses git tags or commit hashes
-    - **Registry flexibility**: Supports Docker Hub, GitHub Container Registry, etc.
-    - **Build optimization**: Includes caching and parallel builds
+   `docker-buildx.sh` 脚本支持：
+    - **多架构构建**：`linux/amd64`、`linux/arm64`
+    - **自动版本检测**：可使用 git 标签或提交哈希
+    - **仓库灵活性**：支持 Docker Hub、GitHub Container Registry 等
+    - **构建优化**：包含缓存和并行构建
 
-   You can also use Make targets for convenience:
+   你也可以使用 Makefile 提供的目标命令以提升便捷性：
 
-   ```bash
-   make docker-buildx                    # Build locally
-   make docker-buildx-push               # Build and push
-   make docker-buildx-version VERSION=v1.0.0  # Build specific version
-   make help-docker                      # Show all Docker-related commands
-   ```
+  ```bash
+  make docker-buildx                    # 本地构建
+  make docker-buildx-push               # 构建并推送
+  make docker-buildx-version VERSION=v1.0.0  # 构建指定版本
+  make help-docker                      # 显示全部 Docker 相关命令
+  ```
 
-   > **Heads-up (macOS cross-compilation)**: macOS keeps the default `ulimit -n` at 256, so `cargo zigbuild` or `./build-rustfs.sh --platform ...` may fail with `ProcessFdQuotaExceeded` when targeting Linux. The build script now tries to raise the limit automatically, but if you still see the warning, run `ulimit -n 4096` (or higher) in your shell before building.
+   > **提示（macOS 交叉编译）**：macOS 默认的 `ulimit -n` 只有 256，使用 `cargo zigbuild` 或 `./build-rustfs.sh --platform ...` 编译 Linux 目标时容易触发 `ProcessFdQuotaExceeded` 链接错误。脚本会尝试自动提升该限制，如仍提示失败，请在构建前手动执行 `ulimit -n 4096`（或更大的值）。
 
-4. **Build with helm chart(Option 4) - Cloud Native environment**
+4. **使用 Helm Chart 部署（方案四）- 云原生环境**
 
-   Following the instructions on [helm chart README](./helm/README.md) to install RustFS on kubernetes cluster.
+   按照 [helm chart 说明文档](./helm/README.md) 的指引，在 Kubernetes 集群中安装 RustFS。
 
-5. **Access the Console**: Open your web browser and navigate to `http://localhost:9000` to access the RustFS console,
-   default username and password is `rustfsadmin` .
-6. **Create a Bucket**: Use the console to create a new bucket for your objects.
-7. **Upload Objects**: You can upload files directly through the console or use S3-compatible APIs to interact with your
-   RustFS instance.
+5. **访问控制台**：打开 Web 浏览器并导航到 `http://localhost:9000` 以访问 RustFS 控制台，默认的用户名和密码是
+   `rustfsadmin` 。
+6. **创建存储桶**：使用控制台为您的对象创建新的存储桶。
+7. **上传对象**：您可以直接通过控制台上传文件，或使用 S3 兼容的 API 与您的 RustFS 实例交互。
 
-**NOTE**: If you want to access RustFS instance with `https`, you can refer
-to [TLS configuration docs](https://docs.rustfs.com/integration/tls-configured.html).
+**注意**：如果你想通过 `https` 来访问 RustFS 实例，请参考 [TLS 配置文档](https://docs.rustfs.com/zh/integration/tls-configured.html)
 
-## Documentation
+## 文档
 
-For detailed documentation, including configuration options, API references, and advanced usage, please visit
-our [Documentation](https://docs.rustfs.com).
+有关详细文档，包括配置选项、API 参考和高级用法，请访问我们的[文档](https://docs.rustfs.com)。
 
-## Getting Help
+## 获取帮助
 
-If you have any questions or need assistance, you can:
+如果您有任何问题或需要帮助，您可以：
 
-- Check the [FAQ](https://github.com/rustfs/rustfs/discussions/categories/q-a) for common issues and solutions.
-- Join our [GitHub Discussions](https://github.com/rustfs/rustfs/discussions) to ask questions and share your
-  experiences.
-- Open an issue on our [GitHub Issues](https://github.com/rustfs/rustfs/issues) page for bug reports or feature
-  requests.
+- 查看[常见问题解答](https://github.com/rustfs/rustfs/discussions/categories/q-a)以获取常见问题和解决方案。
+- 加入我们的 [GitHub 讨论](https://github.com/rustfs/rustfs/discussions)来提问和分享您的经验。
+- 在我们的 [GitHub Issues](https://github.com/rustfs/rustfs/issues) 页面上开启问题，报告错误或功能请求。
 
-## Links
+## 链接
 
-- [Documentation](https://docs.rustfs.com) - The manual you should read
-- [Changelog](https://github.com/rustfs/rustfs/releases) - What we broke and fixed
-- [GitHub Discussions](https://github.com/rustfs/rustfs/discussions) - Where the community lives
+- [文档](https://docs.rustfs.com) - 您应该阅读的手册
+- [更新日志](https://docs.rustfs.com/changelog) - 我们破坏和修复的内容
+- [GitHub 讨论](https://github.com/rustfs/rustfs/discussions) - 社区所在地
 
-## Contact
+## 联系
 
-- **Bugs**: [GitHub Issues](https://github.com/rustfs/rustfs/issues)
-- **Business**: <hello@rustfs.com>
-- **Jobs**: <jobs@rustfs.com>
-- **General Discussion**: [GitHub Discussions](https://github.com/rustfs/rustfs/discussions)
-- **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md)
+- **错误报告**：[GitHub Issues](https://github.com/rustfs/rustfs/issues)
+- **商务合作**：<hello@rustfs.com>
+- **招聘**：<jobs@rustfs.com>
+- **一般讨论**：[GitHub 讨论](https://github.com/rustfs/rustfs/discussions)
+- **贡献**：[CONTRIBUTING.md](CONTRIBUTING.md)
 
-## Contributors
+## 贡献者
 
-RustFS is a community-driven project, and we appreciate all contributions. Check out
-the [Contributors](https://github.com/rustfs/rustfs/graphs/contributors) page to see the amazing people who have helped
-make RustFS better.
+RustFS 是一个社区驱动的项目，我们感谢所有的贡献。查看[贡献者](https://github.com/rustfs/rustfs/graphs/contributors)页面，了解帮助
+RustFS 变得更好的杰出人员。
 
 <a href="https://github.com/rustfs/rustfs/graphs/contributors">
-  <img src="https://opencollective.com/rustfs/contributors.svg?width=890&limit=500&button=false" alt="Contributors"/>
-</a>
+  <img src="https://opencollective.com/rustfs/contributors.svg?width=890&limit=500&button=false" alt="贡献者"/>
+</a >
 
-## Github Trending Top
+## Github 全球推荐榜
 
-🚀 RustFS is beloved by open-source enthusiasts and enterprise users worldwide, often appearing on the GitHub Trending
-top charts.
+🚀 RustFS 受到了全世界开源爱好者和企业用户的喜欢，多次登顶 Github Trending 全球榜。
 
 <a href="https://trendshift.io/repositories/14181" target="_blank"><img src="https://raw.githubusercontent.com/rustfs/rustfs/refs/heads/main/docs/rustfs-trending.jpg" alt="rustfs%2Frustfs | Trendshift" /></a>
 
-## Star History
+## Star 历史图
 
-[![Star History Chart](https://api.star-history.com/svg?repos=rustfs/rustfs&type=date&legend=top-left)](https://www.star-history.com/#rustfs/rustfs&type=date&legend=top-left)
+[![Star 历史图](https://api.star-history.com/svg?repos=rustfs/rustfs&type=date&legend=top-left)](https://www.star-history.com/#rustfs/rustfs&type=date&legend=top-left)
 
-## License
+## 许可证
 
 [Apache 2.0](https://opensource.org/licenses/Apache-2.0)
 
-**RustFS** is a trademark of RustFS, Inc. All other trademarks are the property of their respective owners.
+**RustFS** 是 RustFS, Inc. 的商标。所有其他商标均为其各自所有者的财产。
