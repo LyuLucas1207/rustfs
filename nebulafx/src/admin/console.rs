@@ -1,5 +1,5 @@
-use crate::config::build;
-use crate::license::get_license;
+use shadow_rs::shadow;
+shadow!(build);
 use axum::{
     Json, Router,
     body::Body,
@@ -44,7 +44,6 @@ pub(crate) struct Config {
     api: Api,
     s3: S3,
     release: Release,
-    license: License,
     doc: String,
 }
 
@@ -62,10 +61,6 @@ impl Config {
             release: Release {
                 version: version.to_string(),
                 date: date.to_string(),
-            },
-            license: License {
-                name: "Apache-2.0".to_string(),
-                url: "https://www.apache.org/licenses/LICENSE-2.0".to_string(),
             },
             doc: "https://nebulafx.com/docs/".to_string(),
         }
@@ -91,10 +86,6 @@ impl Config {
         self.release.version.clone()
     }
 
-    #[allow(dead_code)]
-    pub(crate) fn license(&self) -> String {
-        format!("{} {}", self.license.name.clone(), self.license.url.clone())
-    }
 
     #[allow(dead_code)]
     pub(crate) fn doc(&self) -> String {
@@ -120,11 +111,6 @@ struct Release {
     date: String,
 }
 
-#[derive(Debug, Serialize, Clone)]
-struct License {
-    name: String,
-    url: String,
-}
 
 pub(crate) static CONSOLE_CONFIG: OnceLock<Config> = OnceLock::new();
 
@@ -149,16 +135,6 @@ pub(crate) fn init_console_cfg(local_ip: IpAddr, port: u16) {
 //     host.parse::<SocketAddr>().is_ok() || host.parse::<IpAddr>().is_ok()
 // }
 
-#[allow(dead_code)]
-pub async fn license_handler() -> impl IntoResponse {
-    let license = get_license().unwrap_or_default();
-
-    Response::builder()
-        .header("content-type", "application/json")
-        .status(StatusCode::OK)
-        .body(Body::from(serde_json::to_string(&license).unwrap_or_default()))
-        .unwrap()
-}
 
 fn _is_private_ip(ip: IpAddr) -> bool {
     match ip {
@@ -351,7 +327,6 @@ fn setup_console_middleware_stack(
 ) -> Router {
     // 只注册 API 端点，不提供静态文件服务（前端独立运行）
     let mut app = Router::new()
-        .route(&format!("{CONSOLE_PREFIX}/license"), get(license_handler))
         .route(&format!("{CONSOLE_PREFIX}/config.json"), get(config_handler))
         .route(&format!("{CONSOLE_PREFIX}/health"), get(health_check));
 

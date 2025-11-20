@@ -1,13 +1,13 @@
 use serde::Deserialize;
+pub use nebulafx_postgresqlx::{PostgreSQLConfig};
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     pub server: Option<ServerConfig>,
-    pub database: Option<DatabaseConfig>,
+    pub database: Option<PostgreSQLConfig>,
     pub storage: Option<StorageConfig>,
     pub tls: Option<TlsConfig>,
     pub observability: Option<ObservabilityConfig>,
-    pub license: Option<LicenseConfig>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -24,32 +24,6 @@ pub struct ServerConfig {
     pub secret_key: Option<String>,
     pub root_user: Option<String>,
     pub root_password: Option<String>,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct DatabaseConfig {
-    pub host: Option<String>,
-    pub port: Option<u16>,
-    pub user: Option<String>,
-    pub password: Option<String>,
-    pub database: Option<String>,
-    pub charset: Option<String>,
-    pub parse_time: Option<bool>,
-    pub loc: Option<String>,
-    pub logger_level: Option<String>,
-    pub auto_migrate: Option<bool>,
-    pub connection: Option<DatabaseConnectionConfig>,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct DatabaseConnectionConfig {
-    pub timeout: Option<String>,
-    pub max_retries: Option<u32>,
-    pub retry_interval: Option<String>,
-    pub max_idle_connections: Option<u32>,
-    pub max_open_connections: Option<u32>,
-    pub conn_max_idle_time: Option<String>,
-    pub conn_max_lifetime: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -83,10 +57,5 @@ pub struct ObservabilityConfig {
     pub log_rotation_size_mb: Option<u64>,
     pub log_rotation_time: Option<String>,
     pub log_keep_files: Option<u32>,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct LicenseConfig {
-    pub content: Option<String>,
 }
 

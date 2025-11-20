@@ -67,11 +67,6 @@ use nebulafx_ecstore::{
 use nebulafx_filemeta::REPLICATE_INCOMING_DELETE;
 use nebulafx_filemeta::{ObjectPartInfo, RestoreStatusOps};
 use nebulafx_filemeta::{ReplicationStatusType, ReplicationType, VersionPurgeStatusType};
-use nebulafx_kms::{
-    DataKey,
-    service_manager::get_global_encryption_service,
-    types::{EncryptionMetadata, ObjectEncryptionContext},
-};
 use nebulafx_notify::{EventArgsBuilder, notifier_global};
 use nebulafx_policy::{
     auth,
@@ -140,109 +135,25 @@ pub struct FS {
     // pub store: ECStore,
 }
 
-struct ManagedEncryptionMaterial {
-    data_key: DataKey,
-    headers: HashMap<String, String>,
-    kms_key_id: String,
-}
-
 async fn create_managed_encryption_material(
-    bucket: &str,
-    key: &str,
+    _bucket: &str,
+    _key: &str,
     algorithm: &ServerSideEncryption,
-    kms_key_id: Option<String>,
-    original_size: i64,
-) -> Result<ManagedEncryptionMaterial, ApiError> {
-    let Some(service) = get_global_encryption_service().await else {
-        return Err(ApiError::from(StorageError::other("KMS encryption service is not initialized")));
-    };
-
-    if !is_managed_sse(algorithm) {
-        return Err(ApiError::from(StorageError::other(format!(
-            "Unsupported server-side encryption algorithm: {}",
-            algorithm.as_str()
-        ))));
-    }
-
-    let algorithm_str = algorithm.as_str();
-
-    let mut context = ObjectEncryptionContext::new(bucket.to_string(), key.to_string());
-    if original_size >= 0 {
-        context = context.with_size(original_size as u64);
-    }
-
-    let mut kms_key_candidate = kms_key_id;
-    if kms_key_candidate.is_none() {
-        kms_key_candidate = service.get_default_key_id().cloned();
-    }
-
-    let kms_key_to_use = kms_key_candidate
-        .clone()
-        .ok_or_else(|| ApiError::from(StorageError::other("No KMS key available for managed server-side encryption")))?;
-
-    let (data_key, encrypted_data_key) = service
-        .create_data_key(&kms_key_candidate, &context)
-        .await
-        .map_err(|e| ApiError::from(StorageError::other(format!("Failed to create data key: {e}"))))?;
-
-    let metadata = EncryptionMetadata {
-        algorithm: algorithm_str.to_string(),
-        key_id: kms_key_to_use.clone(),
-        key_version: 1,
-        iv: data_key.nonce.to_vec(),
-        tag: None,
-        encryption_context: context.encryption_context.clone(),
-        encrypted_at: Utc::now(),
-        original_size: if original_size >= 0 { original_size as u64 } else { 0 },
-        encrypted_data_key,
-    };
-
-    let mut headers = service.metadata_to_headers(&metadata);
-    headers.insert("x-nebulafx-encryption-original-size".to_string(), metadata.original_size.to_string());
-
-    Ok(ManagedEncryptionMaterial {
-        data_key,
-        headers,
-        kms_key_id: kms_key_to_use,
-    })
+    _kms_key_id: Option<String>,
+    _original_size: i64,
+) -> Result<(), ApiError> {
+    Err(ApiError::from(StorageError::other(format!(
+        "Server-side encryption is not supported. Requested algorithm: {}",
+        algorithm.as_str()
+    ))))
 }
 
 async fn decrypt_managed_encryption_key(
-    bucket: &str,
-    key: &str,
-    metadata: &HashMap<String, String>,
+    _bucket: &str,
+    _key: &str,
+    _metadata: &HashMap<String, String>,
 ) -> Result<Option<([u8; 32], [u8; 12], Option<i64>)>, ApiError> {
-    if !metadata.contains_key("x-nebulafx-encryption-key") {
-        return Ok(None);
-    }
-
-    let Some(service) = get_global_encryption_service().await else {
-        return Err(ApiError::from(StorageError::other("KMS encryption service is not initialized")));
-    };
-
-    let parsed = service
-        .headers_to_metadata(metadata)
-        .map_err(|e| ApiError::from(StorageError::other(format!("Failed to parse encryption metadata: {e}"))))?;
-
-    if parsed.iv.len() != 12 {
-        return Err(ApiError::from(StorageError::other("Invalid encryption nonce length; expected 12 bytes")));
-    }
-
-    let context = ObjectEncryptionContext::new(bucket.to_string(), key.to_string());
-    let data_key = service
-        .decrypt_data_key(&parsed.encrypted_data_key, &context)
-        .await
-        .map_err(|e| ApiError::from(StorageError::other(format!("Failed to decrypt data key: {e}"))))?;
-
-    let key_bytes = data_key.plaintext_key;
-    let mut nonce = [0u8; 12];
-    nonce.copy_from_slice(&parsed.iv[..12]);
-
-    let original_size = metadata
-        .get("x-nebulafx-encryption-original-size")
-        .and_then(|s| s.parse::<i64>().ok());
-
-    Ok(Some((key_bytes, nonce, original_size)))
+    Ok(None)
 }
 
 fn derive_part_nonce(base: [u8; 12], part_number: usize) -> [u8; 12] {
@@ -757,23 +668,7 @@ impl S3 for FS {
 
         if let Some(ref sse_alg) = effective_sse {
             if is_managed_sse(sse_alg) {
-                let material =
-                    create_managed_encryption_material(&bucket, &key, sse_alg, effective_kms_key_id.clone(), actual_size).await?;
-
-                let ManagedEncryptionMaterial {
-                    data_key,
-                    headers,
-                    kms_key_id: kms_key_used,
-                } = material;
-
-                let key_bytes = data_key.plaintext_key;
-                let nonce = data_key.nonce;
-
-                src_info.user_defined.extend(headers.into_iter());
-                effective_kms_key_id = Some(kms_key_used.clone());
-
-                let encrypt_reader = EncryptReader::new(reader, key_bytes, nonce);
-                reader = HashReader::new(Box::new(encrypt_reader), -1, actual_size, None, None, false).map_err(ApiError::from)?;
+                create_managed_encryption_material(&bucket, &key, sse_alg, effective_kms_key_id.clone(), actual_size).await?;
             }
         }
 
@@ -2480,25 +2375,8 @@ impl S3 for FS {
         if sse_customer_algorithm.is_none() {
             if let Some(sse_alg) = &effective_sse {
                 if is_managed_sse(sse_alg) {
-                    let material =
-                        create_managed_encryption_material(&bucket, &key, sse_alg, effective_kms_key_id.clone(), actual_size)
-                            .await?;
-
-                    let ManagedEncryptionMaterial {
-                        data_key,
-                        headers,
-                        kms_key_id: kms_key_used,
-                    } = material;
-
-                    let key_bytes = data_key.plaintext_key;
-                    let nonce = data_key.nonce;
-
-                    metadata.extend(headers);
-                    effective_kms_key_id = Some(kms_key_used.clone());
-
-                    let encrypt_reader = EncryptReader::new(reader, key_bytes, nonce);
-                    reader =
-                        HashReader::new(Box::new(encrypt_reader), -1, actual_size, None, None, false).map_err(ApiError::from)?;
+                    create_managed_encryption_material(&bucket, &key, sse_alg, effective_kms_key_id.clone(), actual_size)
+                        .await?;
                 }
             }
         }
@@ -2676,16 +2554,7 @@ impl S3 for FS {
 
         if let Some(sse) = &effective_sse {
             if is_managed_sse(sse) {
-                let material = create_managed_encryption_material(&bucket, &key, sse, effective_kms_key_id.clone(), 0).await?;
-
-                let ManagedEncryptionMaterial {
-                    data_key: _,
-                    headers,
-                    kms_key_id: kms_key_used,
-                } = material;
-
-                metadata.extend(headers.into_iter());
-                effective_kms_key_id = Some(kms_key_used.clone());
+                create_managed_encryption_material(&bucket, &key, sse, effective_kms_key_id.clone(), 0).await?;
             } else {
                 metadata.insert("x-amz-server-side-encryption".to_string(), sse.as_str().to_string());
             }

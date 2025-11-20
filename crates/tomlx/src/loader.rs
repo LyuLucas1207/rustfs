@@ -1,7 +1,7 @@
 use crate::error::{Result, TomlConfigError};
 use std::path::Path;
 
-pub fn load_config_from_path<T>(path: impl AsRef<Path>) -> Result<T> where T: serde::de::DeserializeOwned {
+pub fn load_config_from_path<T>(path: impl AsRef<Path>, if_print: bool) -> Result<T> where T: serde::de::DeserializeOwned + serde::Serialize {
     let path = path.as_ref();
     
     if !path.exists() {
@@ -11,12 +11,23 @@ pub fn load_config_from_path<T>(path: impl AsRef<Path>) -> Result<T> where T: se
     }
 
     let content = std::fs::read_to_string(path).map_err(|e| TomlConfigError::Io(e))?;
-
-    load_config_from_str(&content)
+    let config: T = load_config_from_str(&content)?;
+    
+    if if_print {
+        match serde_json::to_string_pretty(&config) {
+            Ok(json) => {
+                println!("Loaded configuration from {} (as JSON):\n{}", path.display(), json);
+            }
+            Err(e) => {
+                println!("Loaded configuration from {} (failed to serialize as JSON: {}):\n{}", path.display(), e, content);
+            }
+        }
+    }
+    
+    Ok(config)
 }
 
 pub fn load_config_from_str<T>(content: &str) -> Result<T> where T: serde::de::DeserializeOwned {
     let config: T = toml::from_str(content).map_err(|e| TomlConfigError::Parse(e))?;
-
     Ok(config)
 }

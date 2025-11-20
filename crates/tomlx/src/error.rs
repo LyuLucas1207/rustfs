@@ -16,6 +16,9 @@ pub enum TomlConfigError {
 
     #[error("Invalid configuration path: {0}")]
     InvalidPath(String),
+
+    #[error("Config already initialized")] 
+    AlreadyInitialized,
 }
 
 pub type Result<T> = std::result::Result<T, TomlConfigError>;

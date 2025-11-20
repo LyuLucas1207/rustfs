@@ -3,14 +3,13 @@ mod auth;
 mod config;
 mod error;
 // mod grpc;
-pub mod license;
+
 #[cfg(not(target_os = "windows"))]
 mod profiling;
 mod server;
 mod storage;
 mod version;
 
-// Ensure the correct path for parse_license is imported
 use crate::server::{
     SHUTDOWN_TIMEOUT, ServiceState, ServiceStateManager, ShutdownSignal, init_event_notifier, shutdown_event_notifier,
     start_audit_system, start_http_server, stop_audit_system, wait_for_shutdown,
@@ -18,7 +17,6 @@ use crate::server::{
 use crate::storage::ecfs::{process_lambda_configurations, process_queue_configurations, process_topic_configurations};
 use chrono::Datelike;
 use clap::Parser;
-use license::init_license;
 use nebulafx_ahm::{
     Scanner, create_ahm_services_cancel_token, heal::storage::ECStoreHealStorage, init_heal_manager,
     scanner::data_scanner::ScannerConfig, shutdown_ahm_services,
@@ -53,6 +51,9 @@ use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, error, info, instrument, warn};
 
+use config::init_config;
+use nebulafx_postgresqlx::PostgreSQLPool;
+
 #[cfg(all(target_os = "linux", target_env = "gnu"))]
 #[global_allocator]
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
@@ -81,23 +82,45 @@ fn print_server_info() {
 }
 
 fn main() -> Result<()> {
+    // Initialize configuration first (synchronous)
+    match init_config() {
+        Ok(_) => (),
+        Err(e) => {
+            error!("Failed to initialize config: {}", e);
+            return Err(Error::other(format!("Failed to initialize config: {}", e)));
+        }
+    }
+    
     let runtime = server::get_tokio_runtime_builder()
         .build()
         .expect("Failed to build Tokio runtime");
     runtime.block_on(async_main())
 }
 async fn async_main() -> Result<()> {
-    // Parse the obtained parameters
-    let opt = config::Opt::parse();
+    // Get configuration
+    let config = config::get_config();
+    
+    // Initialize PostgreSQL connection pool if database config exists
+    if let Some(db_config) = &config.database {
+        match PostgreSQLPool::init(db_config).await {
+            Ok(_) => {
+                info!("PostgreSQL connection pool initialized successfully");
+            }
+            Err(e) => {
+                error!("Failed to initialize PostgreSQL connection pool: {}", e);
+                return Err(Error::other(format!("Database connection failed: {}", e)));
+            }
+        }
+    }
 
-    // Initialize the configuration
-    init_license(opt.license.clone());
-
-    // Initialize Observability
-    let guard = match init_obs(Some(opt.clone().obs_endpoint)).await {
+    // Initialize Observability using config
+    let obs_endpoint = config.observability.as_ref()
+        .and_then(|obs| obs.get_endpoint());
+    
+    let guard = match init_obs(obs_endpoint).await {
         Ok(g) => g,
         Err(e) => {
-            println!("Failed to initialize observability: {}", e);
+            error!("Failed to initialize observability: {}", e);
             return Err(Error::other(e));
         }
     };
@@ -118,8 +141,8 @@ async fn async_main() -> Result<()> {
     #[cfg(not(target_os = "windows"))]
     profiling::init_from_env().await;
 
-    // Run parameters
-    match run(opt).await {
+    // Run with config
+    match run(config).await {
         Ok(_) => Ok(()),
         Err(e) => {
             error!("Server encountered an error and is shutting down: {}", e);
@@ -128,15 +151,22 @@ async fn async_main() -> Result<()> {
     }
 }
 
-#[instrument(skip(opt))]
-async fn run(opt: config::Opt) -> Result<()> {
-    debug!("opt: {:?}", &opt);
+#[instrument(skip(config))]
+async fn run(config: &config::Config) -> Result<()> {
+    debug!("config: {:?}", config);
 
-    if let Some(region) = &opt.region {
+    // Get server config
+    let server_config = config.server.as_ref().ok_or_else(|| Error::other("Server config not found"))?;
+    
+    if let Some(region) = &server_config.region {
         nebulafx_ecstore::global::set_global_region(region.clone());
     }
 
-    let server_addr = parse_and_resolve_address(opt.address.as_str()).map_err(Error::other)?;
+    let address = format!("{}:{}", 
+        server_config.host.as_deref().unwrap_or("0.0.0.0"),
+        server_config.port.unwrap_or(9000)
+    );
+    let server_addr = parse_and_resolve_address(address.as_str()).map_err(Error::other)?;
     let server_port = server_addr.port();
     let server_address = server_addr.to_string();
 
@@ -151,14 +181,18 @@ async fn run(opt: config::Opt) -> Result<()> {
     );
 
     // Set up AK and SK
-    nebulafx_ecstore::global::init_global_action_credentials(Some(opt.access_key.clone()), Some(opt.secret_key.clone()));
+    nebulafx_ecstore::global::init_global_action_credentials(
+        server_config.access_key.clone(),
+        server_config.secret_key.clone()
+    );
 
     set_global_nebulafx_port(server_port);
 
-    set_global_addr(&opt.address).await;
+    set_global_addr(&address).await;
 
     // For RPC
-    let (endpoint_pools, setup_type) = EndpointServerPools::from_volumes(server_address.clone().as_str(), opt.volumes.clone())
+    let volumes = server_config.volumes.as_deref().unwrap_or("/deploy/data/dev{1...8}");
+    let (endpoint_pools, setup_type) = EndpointServerPools::from_volumes(server_address.clone().as_str(), volumes.to_string())
         .await
         .map_err(Error::other)?;
 
@@ -202,7 +236,7 @@ async fn run(opt: config::Opt) -> Result<()> {
     // 启动主 HTTP 服务器（包含 S3 API 和 Console API 端点）
     // 前端独立运行，不再需要独立的 Console 服务器
     let s3_shutdown_tx = {
-        let s3_shutdown_tx = start_http_server(&opt, state_manager.clone()).await?;
+        let s3_shutdown_tx = start_http_server(config, state_manager.clone()).await?;
         Some(s3_shutdown_tx)
     };
 
@@ -227,8 +261,6 @@ async fn run(opt: config::Opt) -> Result<()> {
 
     // init  replication_pool
     init_background_replication(store.clone()).await;
-    // Initialize KMS system if enabled
-    init_kms_system(&opt).await?;
 
     // Initialize event notifier
     init_event_notifier().await;
@@ -457,95 +489,3 @@ async fn add_bucket_notification_configuration(buckets: Vec<String>) {
     }
 }
 
-/// Initialize KMS system and configure if enabled
-#[instrument(skip(opt))]
-async fn init_kms_system(opt: &config::Opt) -> Result<()> {
-    println!("CLAUDE DEBUG: init_kms_system called!");
-    info!("CLAUDE DEBUG: init_kms_system called!");
-    info!("Initializing KMS service manager...");
-    info!(
-        "CLAUDE DEBUG: KMS configuration - kms_enable: {}, kms_backend: {}, kms_key_dir: {:?}, kms_default_key_id: {:?}",
-        opt.kms_enable, opt.kms_backend, opt.kms_key_dir, opt.kms_default_key_id
-    );
-
-    // Initialize global KMS service manager (starts in NotConfigured state)
-    let service_manager = nebulafx_kms::init_global_kms_service_manager();
-
-    // If KMS is enabled in configuration, configure and start the service
-    if opt.kms_enable {
-        info!("KMS is enabled, configuring and starting service...");
-
-        // Create KMS configuration from command line options
-        let kms_config = match opt.kms_backend.as_str() {
-            "local" => {
-                let key_dir = opt
-                    .kms_key_dir
-                    .as_ref()
-                    .ok_or_else(|| Error::other("KMS key directory is required for local backend"))?;
-
-                nebulafx_kms::config::KmsConfig {
-                    backend: nebulafx_kms::config::KmsBackend::Local,
-                    backend_config: nebulafx_kms::config::BackendConfig::Local(nebulafx_kms::config::LocalConfig {
-                        key_dir: std::path::PathBuf::from(key_dir),
-                        master_key: None,
-                        file_permissions: Some(0o600),
-                    }),
-                    default_key_id: opt.kms_default_key_id.clone(),
-                    timeout: std::time::Duration::from_secs(30),
-                    retry_attempts: 3,
-                    enable_cache: true,
-                    cache_config: nebulafx_kms::config::CacheConfig::default(),
-                }
-            }
-            "vault" => {
-                let vault_address = opt
-                    .kms_vault_address
-                    .as_ref()
-                    .ok_or_else(|| Error::other("Vault address is required for vault backend"))?;
-                let vault_token = opt
-                    .kms_vault_token
-                    .as_ref()
-                    .ok_or_else(|| Error::other("Vault token is required for vault backend"))?;
-
-                nebulafx_kms::config::KmsConfig {
-                    backend: nebulafx_kms::config::KmsBackend::Vault,
-                    backend_config: nebulafx_kms::config::BackendConfig::Vault(nebulafx_kms::config::VaultConfig {
-                        address: vault_address.clone(),
-                        auth_method: nebulafx_kms::config::VaultAuthMethod::Token {
-                            token: vault_token.clone(),
-                        },
-                        namespace: None,
-                        mount_path: "transit".to_string(),
-                        kv_mount: "secret".to_string(),
-                        key_path_prefix: "nebulafx/kms/keys".to_string(),
-                        tls: None,
-                    }),
-                    default_key_id: opt.kms_default_key_id.clone(),
-                    timeout: std::time::Duration::from_secs(30),
-                    retry_attempts: 3,
-                    enable_cache: true,
-                    cache_config: nebulafx_kms::config::CacheConfig::default(),
-                }
-            }
-            _ => return Err(Error::other(format!("Unsupported KMS backend: {}", opt.kms_backend))),
-        };
-
-        // Configure the KMS service
-        service_manager
-            .configure(kms_config)
-            .await
-            .map_err(|e| Error::other(format!("Failed to configure KMS: {e}")))?;
-
-        // Start the KMS service
-        service_manager
-            .start()
-            .await
-            .map_err(|e| Error::other(format!("Failed to start KMS: {e}")))?;
-
-        info!("KMS service configured and started successfully");
-    } else {
-        info!("KMS service manager initialized. KMS is ready for dynamic configuration via API.");
-    }
-
-    Ok(())
-}
